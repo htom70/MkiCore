@@ -13,11 +13,11 @@ public class EstimatorConfig {
     @Bean
     public List<Estimator> getEstimators() {
         List<Estimator> estimators = new ArrayList<>();
-        estimators.add(new Estimator("randomforest", 1, "http://localhost:8081/api/v1/resources/predict_and_proba"));
-        estimators.add(new Estimator("gradientboosting", 1,"http://localhost:8082/api/v1/resources/predict_and_proba"));
-        estimators.add(new Estimator("logisticregression", 1,"http://localhost:8083/api/v1/resources/predict_and_proba"));
-        estimators.add(new Estimator("watson", 1,"http://localhost:8084/api/v1/resources/predict_and_proba"));
-        estimators.add(new Estimator("LightGBM", 1,"http://localhost:8085/api/v1/resources/predict_and_proba"));
+//        estimators.add(new Estimator("randomforest", 1, "http://localhost:8081/api/v1/resources/predict_and_proba"));
+//        estimators.add(new Estimator("gradientboosting", 1,"http://localhost:8082/api/v1/resources/predict_and_proba"));
+//        estimators.add(new Estimator("logisticregression", 1,"http://localhost:8083/api/v1/resources/predict_and_proba"));
+//        estimators.add(new Estimator("new", 1,"http://localhost:8084/api/v1/resources/predict_and_proba"));
+//        estimators.add(new Estimator("LightGBM", 1,"http://localhost:8085/api/v1/resources/predict_and_proba"));
         return estimators;
     }
 }

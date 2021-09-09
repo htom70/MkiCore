@@ -2,12 +2,14 @@ package hu.user.mkicore.service;
 
 import hu.user.mkicore.config.EstimatorConfig;
 import hu.user.mkicore.domain.Fraud;
+import hu.user.mkicore.estimators.EstimatorContainer;
 import hu.user.mkicore.repository.FraudRepository;
 import io.spring.guides.gs_producing_web_service.DetectionRequest;
 import io.spring.guides.gs_producing_web_service.DetectionResponse;
 import io.spring.guides.gs_producing_web_service.Estimator;
 import io.spring.guides.gs_producing_web_service.GenerateDetectionRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -19,13 +21,16 @@ import java.util.Map;
 @Service
 public class VoteModul {
 
-    private EstimatorConfig estimatorConfig;
+    @Value("${estimatorPath}")
+    private String estimatorPath;
+
+    private EstimatorContainer estimatorContainer;
     private SinglePrediction singlePrediction;
     private FraudRepository fraudRepository;
 
     @Autowired
-    public VoteModul(EstimatorConfig estimatorConfig, SinglePrediction singlePrediction, FraudRepository fraudRepository) {
-        this.estimatorConfig = estimatorConfig;
+    public VoteModul(EstimatorContainer estimatorContainer, SinglePrediction singlePrediction, FraudRepository fraudRepository) {
+        this.estimatorContainer = estimatorContainer;
         this.singlePrediction = singlePrediction;
         this.fraudRepository = fraudRepository;
     }
@@ -33,13 +38,15 @@ public class VoteModul {
     public DetectionResponse voting(GenerateDetectionRequest generateDetectionRequest) {
         long startVoteTime = System.currentTimeMillis();
         DetectionRequest detectionRequest = generateDetectionRequest.getDetectionRequest();
-        List<Estimator> estimators = estimatorConfig.getEstimators();
+        List<Estimator> estimators = estimatorContainer.getEstimators();
 //        List<Response> predictions = new ArrayList<>();
         Map<DetectionResponse, Integer> predictionsAndWeights = new HashMap<>();
         for (Estimator estimator : estimators) {
+
             URI estimatorRestUri = null;
             try {
-                estimatorRestUri = new URI(estimator.getEstimatorURI());
+
+                estimatorRestUri = new URI("http://" + estimator.getEstimatorHost() + ":" + estimator.getEstimatorPort() + estimatorPath);
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }
@@ -47,8 +54,8 @@ public class VoteModul {
         }
         long endVoteTime = System.currentTimeMillis();
         long elapsedTime = endVoteTime - startVoteTime;
-        System.out.println("Szinkron predikciós összidő: "+elapsedTime+" ms");
-        DetectionResponse summaryzedResponse= predictionsEvaluate(predictionsAndWeights);
+        System.out.println("Szinkron predikciós összidő: " + elapsedTime + " ms");
+        DetectionResponse summaryzedResponse = predictionsEvaluate(predictionsAndWeights);
         Fraud predictedFraud = new Fraud();
         predictedFraud.setPredictedValue(summaryzedResponse.getPrediction());
         predictedFraud.setPredicted(true);
@@ -82,11 +89,11 @@ public class VoteModul {
         if (OKNumber > noOKNumber) {
             summaryzedResponse.setPrediction(0);
             summaryzedResponse.setNegativeProbability(OKProbability);
-            summaryzedResponse.setPositiveProbability(1-OKProbability);
+            summaryzedResponse.setPositiveProbability(1 - OKProbability);
         } else if (OKNumber < noOKNumber) {
             summaryzedResponse.setPrediction(1);
             summaryzedResponse.setPositiveProbability(noOKProbability);
-            summaryzedResponse.setNegativeProbability(1-noOKProbability);
+            summaryzedResponse.setNegativeProbability(1 - noOKProbability);
         }
         return summaryzedResponse;
     }

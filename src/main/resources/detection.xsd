@@ -21,7 +21,8 @@
         <xs:sequence>
             <xs:element name="estimatorName" type="xs:string"/>
             <xs:element name="estimatorWeight" type="xs:int"/>
-            <xs:element name="estimatorURI" type="xs:string"/>
+            <xs:element name="estimatorHost" type="xs:string"/>
+            <xs:element name="estimatorPort" type="xs:int"/>
         </xs:sequence>
     </xs:complexType>
 

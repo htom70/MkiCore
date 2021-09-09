@@ -2,6 +2,7 @@ package hu.user.mkicore.service;
 
 import hu.user.mkicore.config.RestConfig;
 import hu.user.mkicore.domain.ResponseFromEstimator;
+import hu.user.mkicore.dto.DateTimeSplitter;
 import io.spring.guides.gs_producing_web_service.DetectionRequest;
 import io.spring.guides.gs_producing_web_service.DetectionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,16 +31,21 @@ public class SinglePrediction {
     public DetectionResponse getPrediction(DetectionRequest detectionRequest, URI estimatorURI) {
         Map<String, List<Object>> requestMap = new HashMap<>();
         List<Object> requestParameters = new ArrayList<>();
-        //TO-DO requestParameters beállításe
+        DateTimeSplitter dateTimeSplitter = new DateTimeSplitter(detectionRequest.getTimestamp());
         requestParameters.add(detectionRequest.getCardNumber());
         requestParameters.add(detectionRequest.getTransactionType());
-        requestParameters.add(detectionRequest.getTimestamp());
         requestParameters.add(detectionRequest.getAmount());
         requestParameters.add(detectionRequest.getCurrencyName());
         requestParameters.add(detectionRequest.getResponseCode());
         requestParameters.add(detectionRequest.getCountryName());
         requestParameters.add(detectionRequest.getVendorCode());
-        requestParameters.add(detectionRequest.getAmount());
+        requestParameters.add(dateTimeSplitter.getYear());
+        requestParameters.add(dateTimeSplitter.getMonth());
+        requestParameters.add(dateTimeSplitter.getDay());
+        requestParameters.add(dateTimeSplitter.getHour());
+        requestParameters.add(dateTimeSplitter.getMin());
+        requestParameters.add(dateTimeSplitter.getSec());
+        requestParameters.add(dateTimeSplitter.getMillisec());
         requestMap.put("values", requestParameters);
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
