@@ -28,7 +28,7 @@ public class EstimatorController {
 
     @PostMapping("/estimator")
     public ResponseEntity<List<Estimator>> addEstimator(@RequestBody EstimatorParameter estimatorParameter) {
-        Estimator estimator = new Estimator(estimatorParameter.getName(), 1, estimatorParameter.getHost(), estimatorParameter.getPortNumber());
+        Estimator estimator = new Estimator(estimatorParameter.getName(), estimatorParameter.getWeight(), estimatorParameter.getHost(), estimatorParameter.getPortNumber());
         estimatorContainer.addEstimator(estimator);
         return new ResponseEntity<>(estimatorContainer.getEstimators(), HttpStatus.OK);
     }
