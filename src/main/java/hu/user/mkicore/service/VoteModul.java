@@ -1,20 +1,17 @@
 package hu.user.mkicore.service;
 
-import hu.user.mkicore.config.EstimatorConfig;
 import hu.user.mkicore.domain.Fraud;
+import hu.user.mkicore.domain.CommulatedResponseFromEstimator;
+import hu.user.mkicore.domain.ResponseFromSingleEstimator;
 import hu.user.mkicore.estimators.EstimatorContainer;
 import hu.user.mkicore.repository.FraudRepository;
 import io.spring.guides.gs_producing_web_service.DetectionRequest;
 import io.spring.guides.gs_producing_web_service.DetectionResponse;
-import io.spring.guides.gs_producing_web_service.Estimator;
 import io.spring.guides.gs_producing_web_service.GenerateDetectionRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,76 +22,54 @@ public class VoteModul {
     private String estimatorPath;
 
     private EstimatorContainer estimatorContainer;
-    private SinglePrediction singlePrediction;
+    private Prediction prediction;
     private FraudRepository fraudRepository;
 
     @Autowired
-    public VoteModul(EstimatorContainer estimatorContainer, SinglePrediction singlePrediction, FraudRepository fraudRepository) {
+    public VoteModul(EstimatorContainer estimatorContainer, Prediction singlePrediction, FraudRepository fraudRepository) {
         this.estimatorContainer = estimatorContainer;
-        this.singlePrediction = singlePrediction;
+        this.prediction = singlePrediction;
         this.fraudRepository = fraudRepository;
     }
 
     public DetectionResponse voting(GenerateDetectionRequest generateDetectionRequest) {
-        long startVoteTime = System.currentTimeMillis();
         DetectionRequest detectionRequest = generateDetectionRequest.getDetectionRequest();
-        List<Estimator> estimators = estimatorContainer.getEstimators();
-//        List<Response> predictions = new ArrayList<>();
-        Map<DetectionResponse, Integer> predictionsAndWeights = new HashMap<>();
-        for (Estimator estimator : estimators) {
-
-            URI estimatorRestUri = null;
-            try {
-
-                estimatorRestUri = new URI("http://" + estimator.getEstimatorHost() + ":" + estimator.getEstimatorPort() + estimatorPath);
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-            }
-            predictionsAndWeights.put(singlePrediction.getPrediction(detectionRequest, estimatorRestUri), estimator.getEstimatorWeight());
-        }
-        long endVoteTime = System.currentTimeMillis();
-        long elapsedTime = endVoteTime - startVoteTime;
-        System.out.println("Szinkron predikciós összidő: " + elapsedTime + " ms");
-        DetectionResponse summaryzedResponse = predictionsEvaluate(predictionsAndWeights);
-        Fraud predictedFraud = new Fraud();
-        predictedFraud.setPredictedValue(summaryzedResponse.getPrediction());
-        predictedFraud.setPredicted(true);
-        predictedFraud.setAmount(detectionRequest.getAmount());
-        predictedFraud.setPositiveProbability(summaryzedResponse.getPositiveProbability());
-        predictedFraud.setNegativeProbability(summaryzedResponse.getNegativeProbability());
-        Integer status = generateDetectionRequest.getStatus();
-        if (status != null) {
-            predictedFraud.setObservedValue(status);
-            predictedFraud.setObserved(true);
-        }
-        fraudRepository.save(predictedFraud);
-        return summaryzedResponse;
+        CommulatedResponseFromEstimator commulatedResponseFromEstimator = prediction.getPrediction(detectionRequest);
+        DetectionResponse detectionResponse = evaulate(commulatedResponseFromEstimator);
+        return detectionResponse;
     }
 
-    private DetectionResponse predictionsEvaluate(Map<DetectionResponse, Integer> predictionsAndWeights) {
+    private DetectionResponse evaulate(CommulatedResponseFromEstimator commulatedResponses) {
         DetectionResponse summaryzedResponse = new DetectionResponse();
+        Map<Integer, Integer> estimatorWeightById = estimatorContainer.getEstimatorWeightById();
         int noOKNumber = 0;
-        int OKNumber = 0;
+        int oKNumber = 0;
         double noOKProbability = 1;
-        double OKProbability = 1;
-        for (Map.Entry<DetectionResponse, Integer> entry : predictionsAndWeights.entrySet()) {
-            if (entry.getKey().getPrediction() == 1) {
-                noOKNumber += entry.getValue();
-                noOKProbability *= entry.getKey().getPositiveProbability();
+        double oKProbability = 1;
+
+        for (Map.Entry<Integer, ResponseFromSingleEstimator> entry : commulatedResponses.getResponse().entrySet()) {
+            int estimatorId = entry.getKey();
+            ResponseFromSingleEstimator response = entry.getValue();
+            int weight = estimatorWeightById.get(estimatorId);
+            if (response.getPrediction() == 1) {
+                noOKNumber += weight;
+                noOKProbability *= weight * response.getPositiveProbability();
             } else {
-                OKNumber += entry.getValue();
-                OKProbability *= entry.getKey().getNegativeProbability();
+                oKNumber += weight;
+                oKProbability *= weight * response.getNegativeProbability();
             }
-        }
-        if (OKNumber > noOKNumber) {
-            summaryzedResponse.setPrediction(0);
-            summaryzedResponse.setNegativeProbability(OKProbability);
-            summaryzedResponse.setPositiveProbability(1 - OKProbability);
-        } else if (OKNumber < noOKNumber) {
-            summaryzedResponse.setPrediction(1);
-            summaryzedResponse.setPositiveProbability(noOKProbability);
-            summaryzedResponse.setNegativeProbability(1 - noOKProbability);
+            if (oKNumber > noOKNumber) {
+                summaryzedResponse.setPrediction(0);
+                summaryzedResponse.setNegativeProbability(oKProbability);
+                summaryzedResponse.setPositiveProbability(1 - oKProbability);
+            } else if (oKNumber < noOKNumber) {
+                summaryzedResponse.setPrediction(1);
+                summaryzedResponse.setPositiveProbability(noOKProbability);
+                summaryzedResponse.setNegativeProbability(1 - noOKProbability);
+            }
         }
         return summaryzedResponse;
     }
+
+
 }

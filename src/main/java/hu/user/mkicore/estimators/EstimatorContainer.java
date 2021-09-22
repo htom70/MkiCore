@@ -1,30 +1,21 @@
 package hu.user.mkicore.estimators;
 
-import io.spring.guides.gs_producing_web_service.Estimator;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @Getter
 @Setter
 public class EstimatorContainer {
 
-    private List<Estimator> estimators = new ArrayList<>();
+    private Map<Integer, Integer> estimatorWeightById = new HashMap<>();
 
-//    public EstimatorContainer() {
-//        Estimator estimator = new Estimator("sample", 1, "http://localhost:", 8084);
-//        addEstimator(estimator);
-//    }
-
-    public List<Estimator> addEstimator(Estimator estimator) {
-        estimators.add(estimator);
-        return estimators;
+    public Map<Integer, Integer> addEstimator(int estimatorId, int estimatorWeight) {
+        estimatorWeightById.put(estimatorId, estimatorWeight);
+        return estimatorWeightById;
     }
-
-
 }
