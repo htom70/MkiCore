@@ -44,6 +44,7 @@ public class Prediction {
         requestParameters.put("vendor_code",detectionRequest.getVendorCode());
         requestParameters.put("year",dateTimeSplitter.getYear());
         requestParameters.put("month",dateTimeSplitter.getMonth());
+        
         requestParameters.put("day",dateTimeSplitter.getDay());
         requestParameters.put("hour",dateTimeSplitter.getHour());
         requestParameters.put("min",dateTimeSplitter.getMin());

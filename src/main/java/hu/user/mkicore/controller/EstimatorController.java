@@ -24,13 +24,13 @@ public class EstimatorController {
         this.estimatorContainer = estimatorContainer;
     }
 
-    @PostMapping("/estimator")
+    @PostMapping("/api/v1/estimator_registration")
     public ResponseEntity<Map<Integer, Integer>> addEstimator(@RequestBody EstimatorParameter estimatorParameter) {
         estimatorContainer.addEstimator(estimatorParameter.getEstimatorId(), estimatorParameter.getWeight());
         return new ResponseEntity<>(estimatorContainer.getEstimatorWeightById(),HttpStatus.OK);
     }
 
-    @GetMapping("/estimator")
+    @GetMapping("/api/v1/estimator_registration")
     public ResponseEntity<Map<Integer, Integer>>  getEstimators() {
         return new ResponseEntity<>(estimatorContainer.getEstimatorWeightById(), HttpStatus.OK);
     }
